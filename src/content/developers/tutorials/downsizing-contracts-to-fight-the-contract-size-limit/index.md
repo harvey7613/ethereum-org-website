@@ -147,6 +147,40 @@ function doSomething() { checkStuff(); }
 
 Those tips should help you to significantly reduce the contract size. Once again, I cannot stress enough, always focus on splitting contracts if possible for the biggest impact.
 
+## WARNING: Be careful how you store a struct and assign values to it {#warning-be-careful-how-you-assign-values-to-a-struct}
+
+The approach you choose has varying effects on contract size limit, between small and high! Lets expand a bit, doing this has a very high impact
+```
+struct myStruct {
+    uint256 amount;
+    uint256 expiry;
+    address owner;
+}
+myStruct structVar;
+
+function updateStruct(uint256 tokens, uint256 date, address owner) private{
+    structVar = myStruct(tokens, date, owner);
+}
+
+```
+Whilst doing this reduces the compiled contract size enormously (not a small effect):
+```
+mapping(address => myStruct) private _structMapping; //store your struct in a mapping instead
+struct myStruct {
+    uint256 amount;
+    uint256 expiry;
+    address owner;
+}
+
+function updateStruct(uint256 tokens, uint256 date, address owner) private{
+   _structMapping[owner].amount = tokens;
+   _structMapping[owner].expiry = date;
+   ....etc
+}
+
+```
+With the former, if your contract is big already, it will hit the size limit easily. Whilst the later makes it hard to hit the size limit.
+
 ## The future for the contract size limits {#the-future-for-the-contract-size-limits}
 
 There is an [open proposal](https://github.com/ethereum/EIPs/issues/1662) to remove the contract size limit. The idea is basically to make contract calls more expensive for large contracts. It wouldn't be too difficult to implement, has a simple backwards compatibility (put all previously deployed contracts in the cheapest category), but [not everyone is convinced](https://ethereum-magicians.org/t/removing-or-increasing-the-contract-size-limit/3045/24).
